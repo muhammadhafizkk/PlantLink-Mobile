@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:plflutter/aziz/dashboard_functions.dart';
 import 'package:plflutter/aziz/connect_sensor_page.dart';
 import 'package:plflutter/aziz/configure_sensor_page.dart';
+import 'package:plflutter/viewchannel_page.dart';
 
 class DashboardScreen extends StatefulWidget {
   
@@ -57,7 +58,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> fetchSensorData() async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/mychannel/$channelId/get_dashboard_data/')
+        Uri.parse('http://127.0.0.1:8000/mychannel/$channelId/get_dashboard_data/')
       );
 
       if (response.statusCode == 200) {
@@ -114,78 +115,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return FlSpot(index.toDouble(), data[index]);
     });
   }
+  // Override the back button behavior
+  Future<bool> _onWillPop() async {
+    // Navigate to  any other page when the back button is pressed
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const ViewChannel()), //ChannelPage()),
+    );
+    return Future.value(false); // Prevent the default pop action
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Dashboard")),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildChartSection("pH Level Chart", _generateSpots(phData), phTimestamps),
-                  const SizedBox(height: 20),
-                  _buildChartSection("Rainfall Chart", _generateSpots(rainfallData), rainfallTimestamps),
-                  const SizedBox(height: 20),
-                  _buildChartSection("Humidity Chart", _generateSpots(humidityData), humidTempTimestamps),
-                  const SizedBox(height: 20),
-                  _buildChartSection("Temperature Chart", _generateSpots(tempData), humidTempTimestamps),
-                  const SizedBox(height: 20),
-                  _buildChartSection("Nitrogen Chart", _generateSpots(nitrogenData), npkTimestamps),
-                  const SizedBox(height: 20),
-                  _buildChartSection("Phosphorous Chart", _generateSpots(phosphorousData), npkTimestamps),
-                  const SizedBox(height: 20),
-                  _buildChartSection("Potassium Chart", _generateSpots(potassiumData), npkTimestamps),
-
-                  const SizedBox(height: 15),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: [
-                        const SizedBox(width: 10),
-                        GreenButtonWithIcon(
-                          label: 'Configure Sensor',
-                          onPressed: () {
-                            Navigator.push(
-                              context, 
-                              MaterialPageRoute(
-                                builder: (context) => ConfigureSensorPage(channelId: channelId)
-                                )
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        appBar: AppBar(title: const Text("Dashboard")),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildChartSection("pH Level Chart", _generateSpots(phData), phTimestamps),
+                    const SizedBox(height: 20),
+                    _buildChartSection("Rainfall Chart", _generateSpots(rainfallData), rainfallTimestamps),
+                    const SizedBox(height: 20),
+                    _buildChartSection("Humidity Chart", _generateSpots(humidityData), humidTempTimestamps),
+                    const SizedBox(height: 20),
+                    _buildChartSection("Temperature Chart", _generateSpots(tempData), humidTempTimestamps),
+                    const SizedBox(height: 20),
+                    _buildChartSection("Nitrogen Chart", _generateSpots(nitrogenData), npkTimestamps),
+                    const SizedBox(height: 20),
+                    _buildChartSection("Phosphorous Chart", _generateSpots(phosphorousData), npkTimestamps),
+                    const SizedBox(height: 20),
+                    _buildChartSection("Potassium Chart", _generateSpots(potassiumData), npkTimestamps),
+      
+                    const SizedBox(height: 15),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        children: [
+                          const SizedBox(width: 10),
+                          GreenButtonWithIcon(
+                            label: 'Configure Sensor',
+                            onPressed: () {
+                              Navigator.push(
+                                context, 
+                                MaterialPageRoute(
+                                  builder: (context) => ConfigureSensorPage(channelId: channelId)
+                                  )
+                                );
+                            },
+                          ),
+                          const SizedBox(width: 10),
+                          GreenButtonWithIcon(
+                            label: 'Connect Sensor',
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AddSensorScreen(channelId: channelId)
+                                ),
                               );
-                          },
-                        ),
-                        const SizedBox(width: 10),
-                        GreenButtonWithIcon(
-                          label: 'Connect Sensor',
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AddSensorScreen(channelId: channelId)
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
-  Widget _buildChartSection(String title, List<FlSpot> spots, List<String> timestamps) {
-
-  String chartDataType="";
-  if (title=="pH Level Chart"){chartDataType="phChart";}
-  else if (title=="Rainfall Chart"){chartDataType="rainfallChart";}
-  else if (title=="Humidity Chart"){chartDataType="humidityChart";}
-  else if (title=="Temperature Chart"){chartDataType="temperatureChart";}
-  else if (title=="Nitrogen Chart"){chartDataType="nitrogenChart";}
-  else if (title=="Phosphorous Chart"){chartDataType="phosphorousChart";}
-  else if (title=="Potassium Chart"){chartDataType="potassiumChart";}
+Widget _buildChartSection(String title, List<FlSpot> spots, List<String> timestamps) {
+  String chartDataType = "";
+  if (title == "pH Level Chart") { chartDataType = "phChart"; }
+  else if (title == "Rainfall Chart") { chartDataType = "rainfallChart"; }
+  else if (title == "Humidity Chart") { chartDataType = "humidityChart"; }
+  else if (title == "Temperature Chart") { chartDataType = "temperatureChart"; }
+  else if (title == "Nitrogen Chart") { chartDataType = "nitrogenChart"; }
+  else if (title == "Phosphorous Chart") { chartDataType = "phosphorousChart"; }
+  else if (title == "Potassium Chart") { chartDataType = "potassiumChart"; }
 
   if (spots.isEmpty) {
     return Column(
@@ -199,7 +211,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   double minXValue = spots.first.x;
   double maxXValue = spots.last.x;
-
   double minYValue = spots.map((spot) => spot.y).reduce((a, b) => a < b ? a : b);
   double maxYValue = spots.map((spot) => spot.y).reduce((a, b) => a > b ? a : b);
 
@@ -224,17 +235,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       SizedBox(
         height: 300,
-        child: LineChart(
-          LineChartData(
-            minX: minXValue,
-            maxX: maxXValue,
-            minY: minYValue,
-            maxY: maxYValue,
-            lineBarsData: [
-              _getChartData(spots, selectedChartTypes[title].toString()),
-            ],
-          ),
-        ),
+        child: selectedChartTypes[title] == "Bar Chart"
+            ? BarChart(
+                BarChartData(
+                  //minX: minXValue,
+                  //maxX: maxXValue,
+                  minY: minYValue,
+                  maxY: maxYValue,
+                  barGroups: _getBarChartData(spots),
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          int index = value.toInt();
+                          if (index >= 0 && index < timestamps.length) {
+                            return Text(
+                              timestamps[index],
+                              style: const TextStyle(fontSize: 10),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : LineChart(
+                LineChartData(
+                  minX: minXValue,
+                  maxX: maxXValue,
+                  minY: minYValue,
+                  maxY: maxYValue,
+                  lineBarsData: [
+                    _getChartData(spots, selectedChartTypes[title].toString()),
+                  ],
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          int index = value.toInt();
+                          if (index >= 0 && index < timestamps.length) {
+                            return Text(
+                              timestamps[index],
+                              style: const TextStyle(fontSize: 10),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
       ),
       const SizedBox(height: 10),
       TextButton.icon(
@@ -260,7 +315,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ],
   );
 }
-
 
   LineChartBarData _getChartData(List<FlSpot> spots, String chartType) {
     switch (chartType) {
@@ -357,24 +411,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-
-void _showErrorDialog(String message) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Error"),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("OK"),
-          ),
-        ],
-      );
-    },
-  );
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Error"),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
-}
-
-
