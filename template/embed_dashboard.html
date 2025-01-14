@@ -34,28 +34,6 @@
     <div id="testing"></div>
     <div id="empty_sensor">This dashboard has no sensor connected!</div>
     
-    <div class="container mt-5 mx-0 px-0">
-        <h2 class="mb-4">Crop Recommendations</h2>
-        <table id="crop-recommendations-table" class="table table-striped">
-            <thead>
-                <tr>
-                    <th scope="col">Crop</th>
-                    <th scope="col">Prediction Accuracy (%)</th>
-                </tr>
-            </thead>
-            <tbody id="crop-recommendations">
-                <!-- Table rows will be added here dynamically -->
-            </tbody>
-        </table>
-        <div id="table-spinner-container" class="text-center" style="display: none;">
-            <div class="spinner-border" role="status">
-                <span class="sr-only"></span>
-            </div>
-            <div id="table-loading-message">Table is being loaded...</div>
-        </div>
-    </div>
-    
-    
 
     <script>
         // Define chart variables
@@ -202,21 +180,6 @@
                             potassiumChart = createChart(potassiumCanvas.id, potassiumData, timestamps_NPK, 'Potassium Value');
                             addDropdown(potassiumCanvasContainer, potassiumChart);
                         }
-                    }
-        
-                    if (data.crop_recommendations && data.crop_recommendations.length > 0) {
-                        const cropRecommendations = data.crop_recommendations;
-                        const cropRecommendationsContainer = document.getElementById('crop-recommendations');
-                        cropRecommendations.forEach(recommendation => {
-                            const row = document.createElement('tr');
-                            const cropCell = document.createElement('td');
-                            cropCell.innerText = recommendation.crop;
-                            const accuracyCell = document.createElement('td');
-                            accuracyCell.innerText = recommendation.accuracy.toFixed(2);
-                            row.appendChild(cropCell);
-                            row.appendChild(accuracyCell);
-                            cropRecommendationsContainer.appendChild(row);
-                        });
                     }
         
                     // Initialize WebSocket connection
@@ -438,43 +401,6 @@
             rainfallChart.update();
             console.log('Updating rainfall chart with data:', data);
         }  
-
-        function updateCropSuggestions(ph, temperature, humidity, rainfall, nitrogen, phosphorous, potassium) {
-            fetch(`get_crop_suggestions/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    ph: ph,
-                    temperature: temperature,
-                    humidity: humidity,
-                    rainfall:rainfall,
-                    nitrogen:nitrogen,
-                    phosphorous:phosphorous,
-                    potassium:potassium
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                const cropRecommendationsContainer = document.getElementById('crop-recommendations');
-                cropRecommendationsContainer.innerHTML = '';  // Clear existing rows
-    
-                data.crop_recommendations.forEach(recommendation => {
-                    const row = document.createElement('tr');
-                    const cropCell = document.createElement('td');
-                    cropCell.innerText = recommendation.crop;
-                    const accuracyCell = document.createElement('td');
-                    accuracyCell.innerText = recommendation.accuracy.toFixed(2);
-                    row.appendChild(cropCell);
-                    row.appendChild(accuracyCell);
-                    cropRecommendationsContainer.appendChild(row);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching crop suggestions:', error);
-            });
-        }
     </script>
     
 </body>

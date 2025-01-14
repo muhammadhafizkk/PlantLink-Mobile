@@ -10,9 +10,13 @@ urlpatterns = [
 
     # RETRIEVE DASHBOARD DATA
     path('<str:channel_id>/get_dashboard_data/', views.getDashboardData, name="getDashboardData"),
+
+    #SHARE CHANNEL & CHART
+    path('<str:channel_id>/share', views.share_channel, name="share_chart"),
     path('<str:channel_id>/share_chart/<str:chart_type>Chart/<str:start_date>/<str:end_date>/<str:chart_name>/', views.share_chart, name="share_chart"),
 
-    # RENDER CHART TEMPLATE
+    # RENDER CHANNEL & CHART TEMPLATE
+    path('embed/channel/<str:channel_id>/', views.render_embed_code, name='render_embed_code'),
     path('embed/channel/<str:channel_id>/phChart/<str:start_date>/<str:end_date>/', views.render_ph_chart, name='render_ph_chart'),
     path('embed/channel/<str:channel_id>/humidityChart/<str:start_date>/<str:end_date>/', views.render_humidity_chart, name='render_humidity_chart'),
     path('embed/channel/<str:channel_id>/temperatureChart/<str:start_date>/<str:end_date>/', views.render_temperature_chart, name='render_temperature_chart'),

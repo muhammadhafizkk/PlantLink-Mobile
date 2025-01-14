@@ -40,8 +40,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'channel',
     'dashboard',
+    'compressor',
+    'bootstrap5',
     'rest_framework',
-    'rest_framework_simplejwt',
+    'rest_framework_simplejwt', 
 ]
 
 MIDDLEWARE = [
@@ -85,7 +87,11 @@ DATABASES = {
     }
 }
 
+COMPRESS_ROOT = BASE_DIR / 'static'
 
+COMPRESS_ENABLED = True
+
+STATICFILES_FINDERS = ('compressor.finders.CompressorFinder',)
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 

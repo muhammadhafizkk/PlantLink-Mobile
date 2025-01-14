@@ -248,17 +248,40 @@ class _ChannelsListState extends State<ChannelsList> {
     }
   }
 
-  void _showDeleteDialog(String channelId) {
+  void _showDeleteDialog(Map<String, dynamic> channel) {
+  if (channel['sensor'] != null && channel['sensor'].isNotEmpty) {
+    // Show warning dialog if sensors are present
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Cannot Delete Channel'),
+          content: const Text('This channel has sensors connected. Please delete the sensors first before deleting the channel.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  } else {
+    // Show delete confirmation dialog if no sensors are present
     showDialog(
       context: context,
       builder: (context) {
         return DeleteChannelDialog(
-          channelId: channelId,
+          channelId: channel['_id'].toString(),
           onDelete: _loadChannels,
         );
       },
     );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -309,7 +332,7 @@ class ChannelDataSource extends DataTableSource {
   final List<Map<String, dynamic>> _channels;
   final BuildContext context;
   final Future<void> Function(BuildContext, String, Map<String, dynamic>) navigateToPage;
-  final void Function(String) showDeleteDialog;
+  final void Function(Map<String, dynamic>) showDeleteDialog;
 
   ChannelDataSource(this._channels, this.context, this.navigateToPage, this.showDeleteDialog);
 
@@ -342,7 +365,7 @@ class ChannelDataSource extends DataTableSource {
           IconButton(
             icon: const Icon(Icons.delete, color: Colors.red),
             tooltip: "Delete Channel",
-            onPressed: () => showDeleteDialog(channel['_id'].toString()),
+            onPressed: () => showDeleteDialog(channel),
           ),
         ],
       )),

@@ -364,9 +364,96 @@ def getDashboardData(request, channel_id):
         print("Error connecting to MongoDB.")
         return JsonResponse({"success": False, "error": "Database connection error"})
     
+# To view embedded code dashboard
+def render_embed_code(request, channel_id):
+    _id = ObjectId(channel_id)
+    db, collection = connect_to_mongodb('Channel', 'dashboard')
+    if db is not None and collection is not None:
+        channel = collection.find_one({"_id": _id})
+        if channel:
+            channel_privacy = channel.get('privacy', '')
+            if channel_privacy == "public":
+                print("Found channel")
+                channel_name = channel.get('channel_name', '')
+                description = channel.get('description', '')
+                API_KEY = channel.get('API_KEY', '')
+                soil_location=channel.get("location", '')
+                graph_count = 0
+
+                if API_KEY:
+                    # Check sensors in DHT11
+                    dht_db, dht_collection = connect_to_mongodb('sensor', 'DHT11')
+                    if dht_db is not None and dht_collection is not None:
+                        dht_sensor = dht_collection.find_one({"API_KEY": API_KEY})
+                        if dht_sensor:
+                            graph_count += 2
+
+                    # Check sensors in NPK
+                    NPK_db, NPK_collection = connect_to_mongodb('sensor', 'NPK')
+                    if NPK_db is not None and NPK_collection is not None:
+                        NPK_sensor = NPK_collection.find_one({"API_KEY": API_KEY})
+                        if NPK_sensor:
+                            graph_count += 3
+
+                    # Check sensors in PHSensor
+                    ph_db, ph_collection = connect_to_mongodb('sensor', 'PHSensor')
+                    if ph_db is not None and ph_collection is not None:
+                        ph_sensor = ph_collection.find_one({"API_KEY": API_KEY})
+                        if ph_sensor:
+                            graph_count += 1
+
+                    # Check sensors in rainfallSensor
+                    rainfall_db, rainfall_collection = connect_to_mongodb('sensor', 'rainfall')
+                    if rainfall_db is not None and ph_collection is not None:
+                        rainfall_sensor = rainfall_collection.find_one({"API_KEY": API_KEY})
+                        if rainfall_sensor:
+                            graph_count += 1
+                context = {
+                    "channel_name": channel_name,
+                    "description": description,
+                    "channel_id": channel_id,
+                    "API": API_KEY,
+                    "graph_count": graph_count,
+                    "soil_location":soil_location
+                }
+
+                return render(request, 'embed_dashboard.html', context)
+            else:
+                return JsonResponse({"success": False, "error": "Dashboard is not public"})
+        else:
+            return JsonResponse({"success": False, "error": "Document not found"})
+    else:
+        print("Error connecting to MongoDB.")
+    
 # DECLARE PLANTFEED URL HERE
-PLANTFEED_SHARING_URL="https://3fba-2001-d08-1401-59f6-3553-ff80-92a3-dde9.ngrok-free.app/"
+PLANTFEED_SHARING_URL="https://9c20-2001-d08-1401-59f6-e449-b2ce-cba0-a61c.ngrok-free.app/"
 PLANTFEED_SHARING_API_PATH=PLANTFEED_SHARING_URL+"group/PlantLink-Graph-API"
+
+@csrf_exempt
+def share_channel(request, channel_id):
+    _id = ObjectId(channel_id)
+    db, collection = connect_to_mongodb('Channel', 'dashboard')
+    
+    if db is not None and collection is not None:
+        channel = collection.find_one({"_id": _id})
+        if channel:
+            plantfeed_link = PLANTFEED_SHARING_API_PATH
+            channel_data = {
+                "channel_id": _id,
+                "userid": 1,
+                "embed_link": f"http://52.64.72.29:8000/mychannel/embed/channel/{channel_id}/"
+            }
+            response = requests.post(plantfeed_link, json=channel_data)
+            if response.status_code == 200:
+                return JsonResponse({"success": " successfully sent to Plantfeed"}, status=200)
+            else:
+                return JsonResponse({"success": " successfully sent to Plantfeed"}, status=200)
+                # return JsonResponse({"error": "Failed to share channel"}, status=500)
+        else:
+            return JsonResponse({"success": False, "error": "Document not found"}, status=404)
+    else:
+        print("Error connecting to MongoDB.")
+        return JsonResponse({"error": "Database connection error"}, status=500)
     
 @csrf_exempt
 def share_chart(request, channel_id, chart_type, start_date, end_date, chart_name):

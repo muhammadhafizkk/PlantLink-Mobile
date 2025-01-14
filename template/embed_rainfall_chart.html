@@ -18,6 +18,15 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <h1>Rainfall Chart</h1>
+    <div>
+        <label for="chartTypeSelect">Select Chart Type:</label>
+        <select id="chartTypeSelect" class="form-select">
+            <option value="line">Line Chart</option>
+            <option value="spline">Spline Chart</option>
+            <option value="bar">Bar Chart</option>
+        </select>
+    </div>
     <div class="chart-container">
         <div id="canvas" class="d-flex align-content-start flex-wrap justify-content-between">
             <div id="chart-spinner-container" class="text-center" style="width: 400px; height: 400px; display: none;">
@@ -27,13 +36,8 @@
                 <div id="chart-loading-message">Graph is being loaded...</div>
             </div>
         </div>
-        <div class="d-grid gap-2"
+        <div class="d-grid gap-2">
             <button id="download" class="btn btn-primary mt-3">Download Chart as Image</button>
-            <!-- <div id="fb-root"></div>
-            <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v20.0" nonce="6wGNTbvk"></script>
-            <div class="fb-share-button" data-href="https://shiroooo.pythonanywhere.com/mychannel/embed/channel/{{ channel_id }}/" data-layout="" data-size="">
-                <a target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fshiroooo.pythonanywhere.com%2Fmychannel%2F{{ channel_id }}%2Fshared_dashboard%2F&amp;src=sdkpreparse" class="fb-xfbml-parse-ignore">Share</a>
-            </div> -->
         </div>
     </div>
 
@@ -42,14 +46,15 @@
             const channelId = "{{ channel_id }}";
             const startDate = "{{ start_date }}";
             const endDate = "{{ end_date }}";
+            let currentChartType = 'line';
 
             document.getElementById('chart-spinner-container').style.display = 'block';
             document.getElementById('download').style.display = 'none';
 
             const url = `/mychannel/rainfall_data/${channelId}/${startDate}/${endDate}/`;
             fetch(url)
-            .then(response => response.json())
-            .then(data => {
+                .then(response => response.json())
+                .then(data => {
                     document.getElementById('download').style.display = 'block';
                     document.getElementById('chart-spinner-container').style.display = 'none';
                     const rainfallData = data.rainfall_values || [];
@@ -63,7 +68,13 @@
                     rainfallCanvas.height = 400;
                     rainfallCanvasContainer.appendChild(rainfallCanvas);
                     document.getElementById('canvas').appendChild(rainfallCanvasContainer);
-                    createChart(rainfallCanvas.id, rainfallData, timestamps, 'rainfall Value');
+                    createChart(rainfallCanvas.id, rainfallData, timestamps, 'Rainfall Value', currentChartType);
+
+                    // Add event listener for chart type change
+                    document.getElementById('chartTypeSelect').addEventListener('change', function(event) {
+                        currentChartType = event.target.value;
+                        createChart(rainfallCanvas.id, rainfallData, timestamps, 'Rainfall Value', currentChartType);
+                    });
                 })
                 .catch(error => {
                     console.error('Error fetching chart data:', error);
@@ -71,9 +82,9 @@
                 });
         });
 
-        function createChart(canvasId, data, labels, label, type = 'line') {
+        function createChart(canvasId, data, labels, label, type) {
             const config = {
-                type: type,
+                type: type === 'spline' ? 'line' : type,
                 data: {
                     labels: labels,
                     datasets: [{
@@ -81,7 +92,7 @@
                         data: data,
                         fill: false,
                         borderColor: 'rgb(75, 192, 192)',
-                        backgroundColor: type === 'bar' ? 'rgba(255, 99, 132, 0.2)' : 'rgb(75, 192, 192)',
+                        backgroundColor: type === 'bar' ? 'rgba(255, 99, 132, 0.2)' : 'rgb(75, 192, 192)'
                     }]
                 },
                 options: {
@@ -106,6 +117,10 @@
                 }
             };
             const canvas = document.getElementById(canvasId);
+            const chartInstance = Chart.getChart(canvas);
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
             return new Chart(canvas, config);
         }
 
