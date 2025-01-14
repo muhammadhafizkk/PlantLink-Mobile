@@ -54,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'plantlink.middleware.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'plantlink.urls'
@@ -136,7 +137,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # To operate sensor on whether to stop or resume sensor monitoring
 RECEIVE_DATA_ENABLED = True
 
-ASGI_APPLICATION = 'PlantLink.asgi.application'
+ASGI_APPLICATION = 'plantlink.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
