@@ -365,7 +365,7 @@ def getDashboardData(request, channel_id):
         return JsonResponse({"success": False, "error": "Database connection error"})
     
 # DECLARE PLANTFEED URL HERE
-PLANTFEED_SHARING_URL="https://dd73-2405-3800-8a8-c373-a8a4-c4f9-cb1f-c551.ngrok-free.app/"
+PLANTFEED_SHARING_URL="https://3fba-2001-d08-1401-59f6-3553-ff80-92a3-dde9.ngrok-free.app/"
 PLANTFEED_SHARING_API_PATH=PLANTFEED_SHARING_URL+"group/PlantLink-Graph-API"
     
 @csrf_exempt
