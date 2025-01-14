@@ -18,6 +18,15 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <h1>pH Chart</h1>
+    <div>
+        <label for="chartTypeSelect">Select Chart Type:</label>
+        <select id="chartTypeSelect" class="form-select">
+            <option value="line">Line Chart</option>
+            <option value="spline">Spline Chart</option>
+            <option value="bar">Bar Chart</option>
+        </select>
+    </div>
     <div class="chart-container">
         <div id="canvas" class="d-flex align-content-start flex-wrap justify-content-between">
             <div id="chart-spinner-container" class="text-center" style="width: 400px; height: 400px; display: none;">
@@ -42,6 +51,7 @@
             const channelId = "{{ channel_id }}";
             const startDate = "{{ start_date }}";
             const endDate = "{{ end_date }}";
+            let currentChartType = 'spline';
 
             document.getElementById('chart-spinner-container').style.display = 'block';
             document.getElementById('download').style.display = 'none';
@@ -108,6 +118,10 @@
                 }
             };
             const canvas = document.getElementById(canvasId);
+            const chartInstance = Chart.getChart(canvas);
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
             return new Chart(canvas, config);
         }
 
