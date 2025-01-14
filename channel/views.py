@@ -381,7 +381,7 @@ def share_chart(request, channel_id, chart_type, start_date, end_date, chart_nam
             return JsonResponse({"error": "Channel not found."}, status=404)
 
         plantfeed_link = PLANTFEED_SHARING_API_PATH
-        embed_link = f"https://shiroooo.pythonanywhere.com/mychannel/embed/channel/{channel_id}/{chart_type}Chart/{start_date}/{end_date}/"
+        embed_link = f"http://52.64.72.29:8000/mychannel/embed/channel/{channel_id}/{chart_type}Chart/{start_date}/{end_date}/"
         
         # Format the data according to PlantFeed's expected structure
         channel_data = {
@@ -418,3 +418,222 @@ def share_chart(request, channel_id, chart_type, start_date, end_date, chart_nam
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+#render chart
+def render_chart(request, channel_id, start_date, end_date, template_name):
+    _id = ObjectId(channel_id)
+    db, collection = connect_to_mongodb('Channel', 'dashboard')
+    
+    if db is None or collection is None:
+        return JsonResponse({"success": False, "error": "Error connecting to MongoDB."})
+    
+    channel = collection.find_one({"_id": _id})
+    
+    if not channel:
+        return JsonResponse({"success": False, "error": "Document not found"})
+    
+    if channel.get('privacy', '') != "public":
+        return JsonResponse({"success": False, "error": "Dashboard is not public"})
+    
+    context = {
+        "channel_name": channel.get('channel_name', ''),
+        "description": channel.get('description', ''),
+        "channel_id": channel_id,
+        "API": channel.get('api_KEY', ''),
+        "graph_count": 1,
+        "start_date": start_date,
+        "end_date": end_date
+    }
+    
+    return render(request, template_name, context)
+
+def render_ph_chart(request, channel_id, start_date, end_date):
+    return render_chart(request, channel_id, start_date, end_date, 'embed_ph_chart.html')
+
+def render_rainfall_chart(request, channel_id, start_date, end_date):
+    return render_chart(request, channel_id, start_date, end_date, 'embed_rainfall_chart.html')
+
+def render_humidity_chart(request, channel_id, start_date, end_date):
+    return render_chart(request, channel_id, start_date, end_date, 'embed_humid_chart.html')
+
+def render_temperature_chart(request, channel_id, start_date, end_date):
+    return render_chart(request, channel_id, start_date, end_date, 'embed_temperature_chart.html')
+
+def render_nitrogen_chart(request, channel_id, start_date, end_date):
+    return render_chart(request, channel_id, start_date, end_date, 'embed_nitrogen_chart.html')
+
+def render_phosphorous_chart(request, channel_id, start_date, end_date):
+    return render_chart(request, channel_id, start_date, end_date, 'embed_phosphorous_chart.html')
+
+def render_potassium_chart(request, channel_id, start_date, end_date):
+    return render_chart(request, channel_id, start_date, end_date, 'embed_potassium_chart.html')
+
+# For retrieve Humidity and Temperature data - DONE
+def getHumidityTemperatureData(request, channel_id, start_date, end_date):
+    _id = ObjectId(channel_id)
+    db, collection = connect_to_mongodb('Channel', 'dashboard')
+    if db is not None and collection is not None:
+        channel = collection.find_one({"_id": _id})
+
+        if channel:
+            sensor = channel.get('sensor', '')
+            humid_values = []
+            temp_values = []
+            timestamps_humid_temp = []
+            API = channel.get('API_KEY', '')
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            
+            # Fetch data from sensor:DHT11
+            db_humid_temp, collection_humid_temp = connect_to_mongodb('sensor', 'DHT11')
+            if db_humid_temp is not None and collection_humid_temp is not None:
+                humid_temp_data = collection_humid_temp.find_one({"API_KEY": API})
+                if humid_temp_data:
+                    for data_point in humid_temp_data.get('sensor_data', []):
+                        timestamp_obj = data_point.get('timestamp', datetime.utcnow())
+                        if start_date <= timestamp_obj <= end_date:
+                            humidity_value = data_point.get('humidity_value', '')
+                            temperature_value = data_point.get('temperature_value', '')
+                            humid_values.append(humidity_value)
+                            temp_values.append(temperature_value)
+                            formatted_timestamp = timestamp_obj.astimezone(pytz.utc).strftime('%d-%m-%Y')
+                            timestamps_humid_temp.append(formatted_timestamp)
+            context = {
+                "channel_id": channel_id,
+                "humid_values": humid_values,
+                "temp_values": temp_values,
+                "timestamps_humid_temp": timestamps_humid_temp,
+                "API": API,
+            }
+            print("check here",context)
+            return JsonResponse(context)
+        else:
+            return JsonResponse({"success": False, "error": "Document not found"})
+    else:
+        print("Error connecting to MongoDB.")
+
+# For retrieve NPK data - DONE
+def getNPKData(request, channel_id, start_date, end_date):
+    _id = ObjectId(channel_id)
+    db, collection = connect_to_mongodb('Channel', 'dashboard')
+    if db is not None and collection is not None:
+        channel = collection.find_one({"_id": _id})
+
+        if channel:
+            sensor = channel.get('sensor', '')
+            nitrogen_values = []
+            phosphorous_values = []
+            potassium_values = []
+            timestamps_NPK = []
+            API = channel.get('API_KEY', '')
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            
+            # Fetch data from sensor:DHT11
+            db_NPK, collection_NPK = connect_to_mongodb('sensor', 'NPK')
+            if db_NPK is not None and collection_NPK is not None:
+                NPK_data = collection_NPK.find_one({"API_KEY": API})
+                if NPK_data:
+                    for data_point in NPK_data.get('sensor_data', []):
+                        timestamp_obj = data_point.get('timestamp', datetime.utcnow())
+                        if start_date <= timestamp_obj <= end_date:
+                            nitrogen_value = data_point.get('nitrogen_value', '')
+                            phosphorous_value = data_point.get('phosphorous_value', '')
+                            potassium_value = data_point.get('potassium_value', '')
+                            nitrogen_values.append(nitrogen_value)
+                            phosphorous_values.append(phosphorous_value)
+                            potassium_values.append(potassium_value)
+                            formatted_timestamp = timestamp_obj.astimezone(pytz.utc).strftime('%d-%m-%Y')
+                            timestamps_NPK.append(formatted_timestamp)
+                        else:
+                            print("invalid timestamp")
+                else:
+                    print("npk_data empty")
+            context = {
+                "channel_id": channel_id,
+                "nitrogen_values" :nitrogen_values,
+                "phosphorous_values" :phosphorous_values, 
+                "potassium_values" :potassium_values, 
+                "timestamps_NPK" :timestamps_NPK, 
+                "API": API,
+            }
+            return JsonResponse(context)
+        else:
+            return JsonResponse({"success": False, "error": "Document not found"})
+    else:
+        print("Error connecting to MongoDB.")
+
+# For retrieve PH data - DONE
+def getPHData(request, channel_id, start_date, end_date):
+    _id = ObjectId(channel_id)
+    db, collection = connect_to_mongodb('Channel', 'dashboard')
+    if db is not None and collection is not None:
+        channel = collection.find_one({"_id": _id})
+
+        if channel:
+            sensor = channel.get('sensor', '')
+            ph_values = []
+            timestamps = []
+            API = channel.get('API_KEY', '')
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
+            db_ph, collection_ph = connect_to_mongodb('sensor', 'PHSensor')
+            if db_ph is not None and collection_ph is not None:
+                ph_data = collection_ph.find_one({"API_KEY": API})
+                if ph_data:
+                    for data_point in ph_data.get('sensor_data', []):
+                        ph_values.append(data_point.get('ph_value', ''))
+                        timestamp_obj = data_point.get('timestamp', datetime.utcnow())
+                        formatted_timestamp = timestamp_obj.astimezone(pytz.utc).strftime('%d-%m-%Y')
+                        timestamps.append(formatted_timestamp)
+
+            context = {
+                "channel_id": channel_id,
+                "ph_values": ph_values,
+                "timestamps": timestamps,
+                "API": API,
+            }
+            return JsonResponse(context)
+        else:
+            return JsonResponse({"success": False, "error": "Document not found"})
+    else:
+        print("Error connecting to MongoDB.")
+
+# For retrieve rainfall data - DONE
+def getRainfallData(request, channel_id, start_date, end_date):
+    _id = ObjectId(channel_id)
+    db, collection = connect_to_mongodb('Channel', 'dashboard')
+    if db is not None and collection is not None:
+        channel = collection.find_one({"_id": _id})
+
+        if channel:
+            sensor = channel.get('sensor', '')
+            rainfall_values = []
+            rainfall_timestamps = []
+            API = channel.get('API_KEY', '')
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
+            db_rainfall, collection_rainfall = connect_to_mongodb('sensor', 'rainfall')
+            if db_rainfall is not None and collection_rainfall is not None:
+                rainfall_data = collection_rainfall.find_one({"API_KEY": API})
+                if rainfall_data:
+                    for data_point in rainfall_data.get('sensor_data', []):
+                        rainfall_values.append(data_point.get('rainfall_value', ''))
+                        timestamp_obj = data_point.get('timestamp', datetime.utcnow())
+                        formatted_timestamp = timestamp_obj.astimezone(pytz.utc).strftime('%d-%m-%Y')
+                        rainfall_timestamps.append(formatted_timestamp)
+
+            context = {
+                "channel_id": channel_id,
+                "rainfall_values": rainfall_values,
+                "timestamps": rainfall_timestamps,
+                "API": API,
+            }
+            return JsonResponse(context)
+        else:
+            return JsonResponse({"success": False, "error": "Document not found"})
+    else:
+        print("Error connecting to MongoDB.")
+
