@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-!opbfn912_&m9qly*xf^5s-x00*999!@q=as8ima-$-cqze=p_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.100', '127.0.0.1', '10.0.2.2','localhost']
+ALLOWED_HOSTS = ['192.168.1.100', '127.0.0.1', '10.0.2.2','localhost','52.64.72.29']
 
 
 # Application definition
@@ -59,9 +59,7 @@ ROOT_URLCONF = 'plantlink.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            os.path.join(BASE_DIR, 'plflutter', 'lib', 'html'),
-        ],
+        'DIRS': [BASE_DIR / 'template'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
