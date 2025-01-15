@@ -34,10 +34,10 @@
     <div id="testing"></div>
     <div id="empty_sensor">This dashboard has no sensor connected!</div>
     
-
     <script>
         // Define chart variables
         let phChart = null, humidChart = null, tempChart = null, rainfallChart = null, nitrogenChart = null, phosphorousChart = null, potassiumChart = null;
+        
         document.addEventListener("DOMContentLoaded", function() {
             const channelId = "{{ channel_id }}"; 
             let latest_ph = null;
@@ -47,14 +47,14 @@
             let latest_nitrogen = null;
             let latest_phosphorous = null;
             let latest_potassium = null;
+
             // Show the spinners and messages before fetching data
             if ("{{ graph_count }}" > 0) {
                 document.getElementById('chart-spinner-container').style.display = 'block';
-                document.getElementById('table-spinner-container').style.display = 'block';
             } else {
                 document.getElementById('empty_sensor').style.display = 'block';
             }
-        
+
             fetch(`/mychannel/${channelId}/get_dashboard_data/`)  // Correct the fetch URL
                 .then(response => response.json())
                 .then(data => {
@@ -68,9 +68,8 @@
 
                     // Hide the spinners and messages after fetching data
                     document.getElementById('chart-spinner-container').style.display = 'none';
-                    document.getElementById('table-spinner-container').style.display = 'none';
         
-                    // Extract data for charts and table
+                    // Extract data for charts
                     const phData = data.ph_values || [];
                     const timestamps = data.timestamps || [];
                     const rainfallData = data.rainfall_values || [];
@@ -82,13 +81,13 @@
                     const tempData = data.temp_values || [];
                     const timestamps_temp_humid = data.timestamps_humid_temp || [];
                     const timestamps_NPK = data.timestamps_NPK || [];
-        
+
                     // Check if there is any data to show charts
                     if (phData.length === 0 && humidData.length === 0 && tempData.length === 0) {
                         document.getElementById('empty_sensor').style.display = 'block';
                     } else {
                         document.getElementById('empty_sensor').style.display = 'none';
-        
+
                         // Update charts
                         if (phData.length > 0) {
                             const phCanvasContainer = document.createElement('div');
@@ -102,7 +101,7 @@
                             phChart = createChart(phCanvas.id, phData, timestamps, 'PH Value');
                             addDropdown(phCanvasContainer, phChart);
                         }
-                        
+
                         if (rainfallData.length > 0) {
                             const rainfallCanvasContainer = document.createElement('div');
                             rainfallCanvasContainer.className = 'canvas-container';
@@ -128,7 +127,7 @@
                             humidChart = createChart(humidCanvas.id, humidData, timestamps_temp_humid, 'Humidity Value');
                             addDropdown(humidCanvasContainer, humidChart);
                         }
-        
+
                         if (tempData.length > 0) {
                             const tempCanvasContainer = document.createElement('div');
                             tempCanvasContainer.className = 'canvas-container';
@@ -154,7 +153,7 @@
                             nitrogenChart = createChart(nitrogenCanvas.id, nitrogenData, timestamps_NPK, 'Nitrogen Value');
                             addDropdown(nitrogenCanvasContainer, nitrogenChart);
                         }
-                        
+
                         if (phosphorousData.length > 0) {
                             const phosphorousCanvasContainer = document.createElement('div');
                             phosphorousCanvasContainer.className = 'canvas-container';
@@ -164,10 +163,10 @@
                             phosphorousCanvas.height = 400;
                             phosphorousCanvasContainer.appendChild(phosphorousCanvas);
                             document.getElementById('canvas').appendChild(phosphorousCanvasContainer);
-                            phosphorousChart = createChart(phosphorousCanvas.id, phosphorousData, timestamps_NPK, 'phosphorous Value');
+                            phosphorousChart = createChart(phosphorousCanvas.id, phosphorousData, timestamps_NPK, 'Phosphorous Value');
                             addDropdown(phosphorousCanvasContainer, phosphorousChart);
                         }
-                        
+
                         if (potassiumData.length > 0) {
                             const potassiumCanvasContainer = document.createElement('div');
                             potassiumCanvasContainer.className = 'canvas-container';
@@ -181,10 +180,10 @@
                             addDropdown(potassiumCanvasContainer, potassiumChart);
                         }
                     }
-        
+
                     // Initialize WebSocket connection
                     const socket = new WebSocket('wss://jzngfcdfgl.execute-api.ap-southeast-2.amazonaws.com/production/');
-            
+
                     socket.onopen = function() {
                         console.log('WebSocket connection established');
                         // Send the API key to register the connection
@@ -193,33 +192,31 @@
                             api: data.API  // Use the API key from the fetched data
                         }));
                     };
-                
+
                     socket.onclose = function(event) {
                         console.log('WebSocket connection closed', event);
                     };
-                
+
                     socket.onerror = function(error) {
                         console.log('WebSocket error', error);
                     };
-                
+
                     socket.onmessage = function(event) {
                         const messageData = JSON.parse(event.data);
                         console.log('WebSocket message received', messageData);
-                
+
                         if (messageData.privateMessage) {
                             const messageContent = messageData.privateMessage;  // Directly use the object
                             console.log('Parsed message content', messageContent);
-                
+
                             if (messageContent.sensor_type === 'DHT11') {
                                 updateHumidityChart(messageContent);
                                 updateTemperatureChart(messageContent);
                                 latest_temperature = messageContent.temperature_value;
                                 latest_humidity = messageContent.humidity_value;
-                                updateCropSuggestions(latest_ph, latest_temperature, latest_humidity, latest_rainfall, latest_nitrogen, latest_phosphorous, latest_potassium);
                             } else if (messageContent.sensor_type === 'ph_sensor') {
                                 updatePhChart(messageContent);
                                 latest_ph = messageContent.ph_value;
-                                updateCropSuggestions(latest_ph, latest_temperature, latest_humidity, latest_rainfall, latest_nitrogen, latest_phosphorous, latest_potassium);
                             } else if (messageContent.sensor_type === 'NPK'){
                                 updateNitrogenChart(messageContent);
                                 updatephosphorousChart(messageContent);
@@ -227,11 +224,9 @@
                                 latest_nitrogen=messageContent.nitrogen_value;
                                 latest_phosphorous=messageContent.phosphorous_value;
                                 latest_potassium=messageContent.potassium_value;
-                                updateCropSuggestions(latest_ph, latest_temperature, latest_humidity, latest_rainfall, latest_nitrogen, latest_phosphorous, latest_potassium);
                             }else if(messageContent.sensor_type === "rainfall_sensor"){
                                 updateRainfallChart(messageContent);
                                 latest_rainfall = messageContent.rainfall_value;
-                                updateCropSuggestions(latest_ph, latest_temperature, latest_humidity, latest_rainfall, latest_nitrogen, latest_phosphorous, latest_potassium);
                             }
                         }
                     };
@@ -240,10 +235,9 @@
                     console.error('Error fetching dashboard data:', error);
                     // Hide the spinners and show error messages if needed
                     document.getElementById('chart-spinner-container').style.display = 'none';
-                    document.getElementById('table-spinner-container').style.display = 'none';
                 });
         });
-        
+
         function createChart(canvasId, data, labels, label, type = 'line') {
             const config = {
                 type: type,
@@ -281,11 +275,11 @@
             const canvas = document.getElementById(canvasId);
             return new Chart(canvas, config);
         }
-        
+
         function addDropdown(container, chart) {
             const dropdownWrapper = document.createElement('div');
             dropdownWrapper.className = 'btn-group';
-        
+
             const dropdownButton = document.createElement('button');
             dropdownButton.className = 'btn btn-success dropdown-toggle mt-1';
             dropdownButton.type = 'button';
@@ -293,7 +287,7 @@
             dropdownButton.setAttribute('data-bs-toggle', 'dropdown');
             dropdownButton.setAttribute('aria-expanded', 'false');
             dropdownButton.innerText = 'Select Chart Type';
-        
+
             const dropdownMenu = document.createElement('ul');
             dropdownMenu.className = 'dropdown-menu';
             dropdownMenu.setAttribute('aria-labelledby', 'dropdownMenuButton');
@@ -303,7 +297,7 @@
                 <li><a class="dropdown-item" href="#" data-type="bar">Bar</a></li>
                 <li><a class="dropdown-item" href="#" data-type="spline">Spline</a></li>
             `;
-        
+
             dropdownMenu.addEventListener('click', function(event) {
                 const selectedType = event.target.getAttribute('data-type');
                 if (selectedType) {
@@ -319,12 +313,12 @@
                     chart.update();
                 }
             });
-        
+
             dropdownWrapper.appendChild(dropdownButton);
             dropdownWrapper.appendChild(dropdownMenu);
             container.appendChild(dropdownWrapper);
         }
-        
+
         function updateHumidityChart(data) {
             if (!humidChart) {
                 console.error('humidChart is not defined');
@@ -335,7 +329,7 @@
             humidChart.update();
             console.log('Updating humidity chart with data:', data);
         }
-        
+
         function updateTemperatureChart(data) {
             if (!tempChart) {
                 console.error('tempChart is not defined');
@@ -346,7 +340,7 @@
             tempChart.update();
             console.log('Updating temperature chart with data:', data);
         }
-        
+
         function updatephosphorousChart(data) {
             if (!phosphorousChart) {
                 console.error('phosphorousChart is not defined');
@@ -355,9 +349,9 @@
             phosphorousChart.data.labels.push(data.timestamp);
             phosphorousChart.data.datasets[0].data.push(parseFloat(data.phosphorous_value));
             phosphorousChart.update();
-            console.log('Updating temperature chart with data:', data);
+            console.log('Updating phosphorous chart with data:', data);
         }
-        
+
         function updatePotassiumChart(data) {
             if (!potassiumChart) {
                 console.error('potassiumChart is not defined');
@@ -366,9 +360,9 @@
             potassiumChart.data.labels.push(data.timestamp);
             potassiumChart.data.datasets[0].data.push(parseFloat(data.potassium_value));
             potassiumChart.update();
-            console.log('Updating temperature chart with data:', data);
+            console.log('Updating potassium chart with data:', data);
         }
-        
+
         function updateNitrogenChart(data) {
             if (!nitrogenChart) {
                 console.error('nitrogenChart is not defined');
@@ -377,9 +371,9 @@
             nitrogenChart.data.labels.push(data.timestamp);
             nitrogenChart.data.datasets[0].data.push(parseFloat(data.nitrogen_value));
             nitrogenChart.update();
-            console.log('Updating temperature chart with data:', data);
+            console.log('Updating nitrogen chart with data:', data);
         }
-        
+
         function updatePhChart(data) {
             if (!phChart) {
                 console.error('phChart is not defined');
@@ -389,8 +383,8 @@
             phChart.data.datasets[0].data.push(parseFloat(data.ph_value));
             phChart.update();
             console.log('Updating pH chart with data:', data);
-        }        
-        
+        }
+
         function updateRainfallChart(data) {
             if (!rainfallChart) {
                 console.error('rainfallChart is not defined');
@@ -402,6 +396,5 @@
             console.log('Updating rainfall chart with data:', data);
         }  
     </script>
-    
 </body>
 </html>
