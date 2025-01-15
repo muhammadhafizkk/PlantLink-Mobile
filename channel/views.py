@@ -426,7 +426,7 @@ def render_embed_code(request, channel_id):
         print("Error connecting to MongoDB.")
     
 # DECLARE PLANTFEED URL HERE
-PLANTFEED_SHARING_URL="https://9c20-2001-d08-1401-59f6-e449-b2ce-cba0-a61c.ngrok-free.app/"
+PLANTFEED_SHARING_URL="https://867a-2405-3800-8bb-a348-d1ed-f1e4-4aa7-4c15.ngrok-free.app/"
 PLANTFEED_SHARING_API_PATH=PLANTFEED_SHARING_URL+"group/PlantLink-Graph-API"
 
 @csrf_exempt
@@ -438,21 +438,36 @@ def share_channel(request, channel_id):
         channel = collection.find_one({"_id": _id})
         if channel:
             plantfeed_link = PLANTFEED_SHARING_API_PATH
+            channel_name = channel.get('channel_name', 'Unknown Channel')
+            
             channel_data = {
-                "channel_id": _id,
-                "userid": 1,
-                "embed_link": f"http://52.64.72.29:8000/mychannel/embed/channel/{channel_id}/"
+                "userid": "1",  # Ensure this is a valid user ID in PlantFeed
+                "chart_name": f"Channel: {channel_name}",  # Use the channel name
+                "embed_link": f"http://52.64.72.29:8000/mychannel/embed/channel/{channel_id}/",
+                "chart_type": "Channel",  # Replace with actual chart type if needed
+                "start_date": "2025-01-01",  # Replace with actual start date if needed
+                "end_date": "2025-01-14"  # Replace with actual end date if needed
             }
-            response = requests.post(plantfeed_link, json=channel_data)
-            if response.status_code == 200:
-                return JsonResponse({"success": " successfully sent to Plantfeed"}, status=200)
-            else:
-                return JsonResponse({"success": " successfully sent to Plantfeed"}, status=200)
-                # return JsonResponse({"error": "Failed to share channel"}, status=500)
+
+            headers = {
+                'Content-Type': 'application/json',
+            }
+
+            try:
+                response = requests.post(
+                    plantfeed_link, 
+                    json=channel_data,  # Use json parameter instead of data
+                    headers=headers
+                )
+                if response.status_code == 200:
+                    return JsonResponse({"success": "Channel successfully sent to PlantFeed"}, status=200)
+                else:
+                    return JsonResponse({"error": f"Failed to share channel. PlantFeed Response: {response.text}"}, status=response.status_code)
+            except requests.RequestException as e:
+                return JsonResponse({"error": f"Failed to send request to PlantFeed: {str(e)}"}, status=500)
         else:
-            return JsonResponse({"success": False, "error": "Document not found"}, status=404)
+            return JsonResponse({"error": "Document not found"}, status=404)
     else:
-        print("Error connecting to MongoDB.")
         return JsonResponse({"error": "Database connection error"}, status=500)
     
 @csrf_exempt

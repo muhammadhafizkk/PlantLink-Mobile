@@ -157,6 +157,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           const SizedBox(width: 10),
                           GreenButtonWithIcon(
+                            label: 'Share Channel',
+                            onPressed: shareChannel,
+                          ),
+                          const SizedBox(width: 10),
+                          GreenButtonWithIcon(
                             label: 'Configure Sensor',
                             onPressed: () {
                               Navigator.push(
@@ -356,6 +361,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       );
     }).toList();
+  }
+  // Function to share the channel
+  Future<void> shareChannel() async {
+    final url = 'http://10.0.2.2:8000/mychannel/$channelId/share';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData["success"] != null) {
+          _showDialog("Channel Shared", responseData["success"]);
+        } else {
+          _showDialog("Error", "Failed to share the channel.");
+        }
+      } else {
+        _showDialog("Error", "Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      _showDialog("Error", "An unexpected error occurred: $e");
+    }
+  }
+
+  void _showDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> shareChart(String chartTitle, List<FlSpot> spots, String chartDataType, String startDate, String endDate, String chartType) async {
